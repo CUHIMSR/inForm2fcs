@@ -36,14 +36,13 @@ test_function <- function(arg1){
 #make_fcs <- function(fname = "DATA/MTC Panel 1 021618 Batch Merge_cell_seg_data.txt", outdir=".", dropNormal=FALSE){
 #make_fcs <- function(fname = "DATA/MTC Panel 4 (15-2) Thyroid Batch merge_cell_seg_data.txt", outdir=".", dropNormal=FALSE){
 #make_fcs <- function(fname = "DATA/MTC Panel 4 (15-2) TILN Batch Merge_cell_seg_data.txt", outdir=".", dropNormal=FALSE){
-make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal=FALSE, origfname=c()){
+make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=c(), dropNormal=FALSE, origfname=c()){
    t0 <- Sys.time();
    if(is.null(origfname)){
       origfname <- fname;
    }
    
-   ####  ignore outdir  ###
-   # Outfile names will start with outdir, 
+   # Outfile names will start with outdir if provided, 
    # then basename of infile,
    # convert spaces to underscores,
    # drop cell_seg_data.txt
@@ -52,15 +51,23 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
    #      gsub(pattern=" ", replacement="_", x=basename(fname), fixed=TRUE)));
    outbase <- sub(pattern="_cell_seg_data.txt$", replacement="_", x=
          gsub(pattern=" ", replacement="_", x=basename(origfname), fixed=TRUE));
+   if(!is.null(outdir)){
+      outbase <- sprintf("%s/%s", outdir, outbase);
+   }
 
    print(sprintf("fname:%s", fname), q=F);
-   #print(sprintf("outbase:%s", outbase), q=F);
+   print(sprintf("outbase:%s", outbase), q=F);
 
    #csd <- read_cell_seg_data(fname); #  class(csd):   "tbl_df"     "tbl"        "data.frame"
    # just as good 
    csd <- read.table(fname, header=TRUE, sep="\t", as.is=TRUE, comment.char="", check.names=FALSE);
    colnames(csd) <- gsub(pattern=" (Normalized Counts, Total Weighting)", replacement="", x=colnames(csd), fixed=TRUE);
 
+   # Check for and remove extra header lines left from sloppy manual mergers.
+   wheaderlines <- which(csd$'Slide ID' == "Slide ID");
+   if(length(wheaderlines) > 0){
+      csd <- csd[-wheaderlines,];
+   }
 
    if(dropNormal){
       # Drop rows if the "Path" column (2) contains the string "normal" or "Normal"
@@ -74,7 +81,12 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
    }
 
    if(! ("Tissue Category" %in% colnames(csd)) ){
-      csd <- cbind(csd, "Tissue Category"="single_tissue_category");
+      #csd <- cbind(csd, "Tissue Category"="single_tissue_category");
+      csd <- cbind(csd, "Tissue Category"="");
+   }
+   if(! ("Phenotype" %in% colnames(csd)) ){
+      #csd <- cbind(csd, "Phenotype"="single_phenotype");
+      csd <- cbind(csd, "Phenotype"="");
    }
    # How many cells of each phenotype are in each tissue category?
    print(table(csd$`Tissue Category`, csd$Phenotype), q=F);
@@ -91,21 +103,30 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
    #  unique combinations of "Sample Name", "Tissue Category", "Phenotype": 2105
 
    ####   subsample for testing   ####
-   #samplesize <- 10000;
    #samplesize <- 100000;
    #samplesize <- 1000;
    #ris <- sample.int(n=nrow(csd), size=samplesize);
    #csd_mat <- csd_mat[ris,];
 
-   # Drop columns we don't need.
+   # Keep only the columns we need.
    allMeanCols <- grep("Mean", colnames(csd_mat), value=TRUE, fixed=TRUE);
-   colsNeeded <- c(allMeanCols, "Slide ID", "Phenotype", "Tissue Category"); 
+   allTotalCols <- grep("Total", colnames(csd_mat), value=TRUE, fixed=TRUE); # ?TOTAL? probably don't want "Total Cells"
+   wTC <- which(allTotalCols == "Total Cells");
+   if(length(wTC) > 0){
+      allTotalCols <- allTotalCols[-wTC];
+   }
+   outputColumns <- c(allMeanCols, allTotalCols, "Cell X Position", "Cell Y Position", "Nucleus Area (pixels)", "Entire Cell Area (pixels)", "Confidence");  # extra columns to include
+
+   colsNeeded <- c(outputColumns, "Slide ID", "Phenotype", "Tissue Category");
    wcols <- which(colnames(csd_mat) %in% colsNeeded);
    csd_mat <- csd_mat[,wcols];
-   # csd_mat is character, has columns: allMeanCols, "Slide ID", "Phenotype", "Tissue Category"
+   # csd_mat is character, has columns: outputColumns, "Slide ID", "Phenotype", "Tissue Category"
 
-   # Which are mean columns? These will be converted from char to numeric and written to fcs out.
-   wmc <- which(colnames(csd_mat) %in% allMeanCols);
+   # Confidence includes a percent sign "%". Drop it.
+   csd_mat <- gsub(pattern="%", replacement="", x=csd_mat, fixed=TRUE);
+
+   # Which are columns to write to the fcs file? These will be converted from char to numeric and written to fcs out.
+   wmc <- which(colnames(csd_mat) %in% outputColumns);
 
    #gotOne <- FALSE; # testing...
 
@@ -123,7 +144,7 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
       doublematrix <- matrix(as.double(csd_mat[wslide, wmc]), nrow=length(wslide), byrow=FALSE);
       colnames(doublematrix) <- colnames(csd_mat)[wmc];
       ff <- flowFrame(doublematrix);
-      img_out_filename <- sprintf("%s_all.fcs", slide_out_base);
+      img_out_filename <- sprintf("%s_All.fcs", slide_out_base);
       print(sprintf("%s  %i cells", img_out_filename, length(wslide)), q=F);
       write.FCS(ff, filename=img_out_filename);
 
@@ -133,12 +154,15 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
          # all phenotypes, by tissue category
          w_slide_t <- intersect(wslide, wtc); # which slide and tissue category
          if(length(w_slide_t) > 0){
-            doublematrix <- matrix(as.double(csd_mat[w_slide_t, wmc]), nrow=length(w_slide_t), byrow=FALSE);
-            colnames(doublematrix) <- colnames(csd_mat)[wmc];
-            ff <- flowFrame(doublematrix);
-            out_filename <- sprintf("%s_%s_all.fcs", slide_out_base, tissueCat);
-            print(sprintf("%s  %i cells", out_filename, length(w_slide_t)), q=F);
-            write.FCS(ff, filename=out_filename);
+            if(tissueCat != ""){
+               doublematrix <- matrix(as.double(csd_mat[w_slide_t, wmc]), nrow=length(w_slide_t), byrow=FALSE);
+               colnames(doublematrix) <- colnames(csd_mat)[wmc];
+               ff <- flowFrame(doublematrix);
+               #out_filename <- sprintf("%s_%s_all.fcs", slide_out_base, tissueCat);
+               out_filename <- sprintf("%s_all_%s.fcs", slide_out_base, tissueCat);
+               print(sprintf("%s  %i cells", out_filename, length(w_slide_t)), q=F);
+               write.FCS(ff, filename=out_filename);
+            }
          } else{
             print(sprintf("skipping %s all %s  0 cells", slide_out_base, tissueCat), q=F);
          }
@@ -153,7 +177,11 @@ make_fcs <- function(fname = "concat5_cell_seg_data.txt", outdir=".", dropNormal
                ff <- flowFrame(doublematrix);
                #out_filename <- sprintf("%s_%s_%s.fcs", slide_out_base, pheno, tissueCat);
                # Drop / from file name. write.FCS can't handle it.
-               out_filename <- sprintf("%s_%s_%s.fcs", slide_out_base, gsub("/","-",pheno), tissueCat);
+               if(tissueCat == ""){
+                  out_filename <- sprintf("%s_%s.fcs", slide_out_base, gsub("/","-",pheno));
+               } else{
+                  out_filename <- sprintf("%s_%s_%s.fcs", slide_out_base, gsub("/","-",pheno), tissueCat);
+               }
                print(sprintf("%s  %i cells", out_filename, length(w_slide_ph_t)), q=F);
                write.FCS(ff, filename=out_filename);
             } else{
@@ -439,10 +467,8 @@ ui <- fluidPage(
       br(),
       br(),
       br(),
-      h3("Output will be sent to the current working directory:"),
+      h3("FCS files will be sent to the current working directory:"),
       h3(code(getwd())),
-      #h3('and will have the same file name as the input file'),
-      #h3('with "_withZeros.txt" appended.'),
       br(),
       br(),
       h3('Please Note: This may take several minutes for large files (~9 minutes for a 1.5G file).'),
