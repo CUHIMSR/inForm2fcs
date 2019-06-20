@@ -1,7 +1,7 @@
 # inForm2fcs
 Utility for working with data tables produced by inForm software (PerkinElmer) for cell segmentation, phenotyping, quantification, and localization of Vectra scans.
 Enable flow-style analysis of Vectra tissue scans for inForm segmentation results.
-Create fcs files, grouped by "Tissue Category" and "Phenotype" per each "Slide ID".
+Create FCS files, grouped by "Tissue Category" and "Phenotype" per each "Slide ID".
 
 # Installation
 
@@ -62,7 +62,7 @@ FCS output files will be sent to the directory containing inForm2fcs.R
 ## Command Line Usage
 It will often be much faster to bypass the Siny interface and create FCS files directly from the command line:
 ```
-make\_fcs(fname = "/path/to/\_cell\_seg\_data.txt", outdir = "/path/to/output/directory/")
+make_fcs(fname = "/path/to/\_cell\_seg\_data.txt", outdir = "/path/to/output/directory/")
 ```
 ###### fname:  
 Full path to input \_cell\_seg\_data.txt file.
