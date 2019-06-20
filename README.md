@@ -47,7 +47,7 @@ This will create one FCS file for each Tissue Category, Phenotype, and Slide ID,
 
 Additionally, one FCS file will be created for each slide containing all cells for that slide: slideName\_All.fcs
 
-Exported fields include Mean and Total (if present) for every marker, as well as:
+Exported fields include __Mean__ and __Total__ (if present) for every marker, as well as:
 * Cell X Position
 * Cell Y Position
 * Nucleus Area (pixels)
