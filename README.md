@@ -58,14 +58,16 @@ FCS output files will be sent to the directory containing inForm2fcs.R
 
 
 ## Command Line Usage
-It will often be much faster to bypass the Siny interface and create FCS files directly from the command line:
+It will often be much faster to bypass the Shiny interface and create FCS files directly from the command line:
 ```
 make_fcs(fname = "/path/to/_cell_seg_data.txt", outdir = "/path/to/output/directory/")
+or
+make_fcs(fname = "/path/to/_cell_seg_data.txt")
 ```
 ###### fname:  
 Full path to input \_cell\_seg\_data.txt file.
 ###### outdir:  
-Directory to write resulting FCS files. This directory must exist before calling make\_fcs(). Defaults to the current working directory.
+(optional) Directory to write resulting FCS files. This directory must exist before calling make\_fcs(). Defaults to the current working directory if not specified.
 
 
 
