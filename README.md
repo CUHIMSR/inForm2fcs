@@ -8,15 +8,17 @@ Create fcs files, grouped by "Tissue Category" and "Phenotype" per each "Slide I
 
 ## Install required R packages
 
-If you haven't already, you need to install these packages:
+If you haven't already, you will need to install these packages:
 flowCore
 Shiny
 
 #### flowCore
-
+At the R command line enter:
 ```
-source("http://bioconductor.org/biocLite.R")
-biocLite("flowCore")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("flowCore")
 ```
 
 #### Shiny
@@ -34,15 +36,40 @@ Download inForm2fcs.R here.
 
 # Usage
 
-In an R session, navigate to where you downloaded inForm2fcs.R, and start it by typing:
+In an R session, navigate to the directory containing inForm2fcs.R, and start it by typing:
 
 ```
 source("inForm2fcs.R")
 runApp("inForm2fcs.R")
 ```
 
-In the user interface, select a cell segmentation file produce by inForm.  These files typically end in "_cell_seg_data.txt"
+In the user interface, select a cell segmentation file produced by inForm. These files typically end in "\_cell\_seg\_data.txt"
 
-This will produce one FCS file for each Tissue Category, Phenotype, and Slide ID, named accordingly.
-FCS files will be sent to the current working directory where you downloaded inform2fcs.R.
+This will create one FCS file for each Tissue Category, Phenotype, and Slide ID, named accordingly.
+
+Additionally, one FCS file will be created for each slide containing all cells for that slide: slideName\_All.fcs
+
+Exported fields include Mean and Total (if present) for every marker, as well as:
+*Cell X Position
+*Cell Y Position
+*Nucleus Area (pixels)
+*Confidence
+
+FCS output files will be sent to the directory containing inForm2fcs.R
+
+
+
+## Command Line Usage
+It will often be much faster to bypass the Siny interface and create FCS files directly from the command line:
+```
+make\_fcs(fname = "/path/to/\_cell\_seg\_data.txt", outdir = "/path/to/output/directory/")
+```
+###### fname:  
+Full path to input \_cell\_seg\_data.txt file.
+###### outdir:  
+Directory to write resulting FCS files. This directory must exist before calling make\_fcs(). Defaults to the current working directory.
+
+
+
+
 
