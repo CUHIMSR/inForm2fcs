@@ -9,8 +9,8 @@ Create fcs files, grouped by "Tissue Category" and "Phenotype" per each "Slide I
 ## Install required R packages
 
 If you haven't already, you will need to install these packages:
-flowCore
-Shiny
+* flowCore
+* Shiny
 
 #### flowCore
 At the R command line enter:
@@ -30,7 +30,7 @@ install.packages("shiny")
 
 #### inForm2fcs
 
-Download inForm2fcs.R here.
+Download inForm2fcs.R at the top of this page.
 
 
 
@@ -50,10 +50,10 @@ This will create one FCS file for each Tissue Category, Phenotype, and Slide ID,
 Additionally, one FCS file will be created for each slide containing all cells for that slide: slideName\_All.fcs
 
 Exported fields include Mean and Total (if present) for every marker, as well as:
-*Cell X Position
-*Cell Y Position
-*Nucleus Area (pixels)
-*Confidence
+* Cell X Position
+* Cell Y Position
+* Nucleus Area (pixels)
+* Confidence
 
 FCS output files will be sent to the directory containing inForm2fcs.R
 
