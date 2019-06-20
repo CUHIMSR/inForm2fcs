@@ -22,14 +22,12 @@ BiocManager::install("flowCore")
 ```
 
 #### Shiny
-
 ```
 install.packages("shiny")
 ```
 
 
 #### inForm2fcs
-
 Download inForm2fcs.R at the top of this page.
 
 
